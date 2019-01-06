@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -44,6 +45,42 @@ namespace download_yts_full {
 			this.PageFileName = this.app.GetInWorking(this.PageFileName);
 			this.TorrentFileName = this.app.GetInWorking(this.TorrentFileName);
 			this.TorrentFileNameSecond = this.app.GetInWorking(this.TorrentFileNameSecond);
+		}
+
+		public class ListPage {
+			public string URL = null;
+
+			public string Filename = null;
+
+			public ListPage(string filename) {
+				this.Filename = filename;
+			}
+			public ListPage(string filename, string url) {
+
+				this.Filename = filename;
+			}
+
+
+			public string Contents {
+				get {
+					return File.ReadAllText(this.Filename);
+				}
+			}
+
+			private MatchCollection _matches = null;
+			public MatchCollection Matches {
+				get {
+					if (this._matches == null) {
+						this._matches = listRegex.Matches(this.Contents);
+					}
+
+					return this._matches;
+				}
+			}
+
+			public void Refresh() {
+				this._matches = null;
+			}
 		}
 	}
 }
