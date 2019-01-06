@@ -13,84 +13,32 @@ using System.Security.Cryptography;
 
 namespace download_yts_full {
 	class Program {
-		const string baseFolder = @"c:\working\yts_base\";
+		static string baseFolder = @"c:\working\yts_base\";
 
-		static string LogFileName = baseFolder + @"run\{now}\log.txt";
-		static string ErrorFileName = baseFolder + @"run\{now}\error.txt";
-		static string StartURL = @"https://yts.am/browse-movies?page=1";
-		static string StartFileName = baseFolder + @"run\{now}\start.txt";
-		static string ListURL = @"https://yts.am/browse-movies?page={0}";
-		static string ListFileName = baseFolder + @"run\{now}\list\list-{0}.txt";
-		static string PageFileName = baseFolder + @"run\{now}\page\page-{0}-{1}.txt";
-		static string TorrentFileName = baseFolder + @"run\{now}\torrent\{0}-{1}-{2}-{3}.torrent";
-		static string TorrentFileNameSecond = baseFolder + @"run\{now}\torrent\{0} [{1}][{2}].torrent";
+		static readonly App app = new App(baseFolder);
 
-		static string DiagnosticNow = @"2019-01-01_11-41-23-1358";
+		static readonly YTS yts = new YTS(app);
 
-		static string NowString = Now();
+		//static string DiagnosticNow = @"2019-01-01_11-41-23-1358";
 
-		static int PerPage = 20;
+
 		static int StartOnPage = 1;
 
-		static Regex listRegex = new Regex(@"<a href=""(.+)"" class=""browse-movie-title"">(.+)</a>\s+<div class=""browse-movie-year"">(.+)</div>");
-		static Regex lastRegex = new Regex(@"<a href=""/browse-movies\?page=(\d+)"">Last &raquo;</a>");
-		static Regex pageRegex = new Regex(@"<em class=""pull-left"">Available in: &nbsp;</em>\s+(?:<a href=""(.+)"" rel=""nofollow"" title="".+"">(.+)</a>\s*)+");
-		static Regex filenameRegex = new Regex(@"[\*\.""\/\?\\:;|=,]");
-
-		static MD5 md5 = MD5.Create();
-
-		static StreamWriter _logFile;
-		static StreamWriter LogFile {
-			get {
-				if (_logFile == null) {
-					_logFile = File.CreateText(String.Format(LogFileName, Now()));
-				}
-				return _logFile;
-			}
+		static void Log(string message) {
+			app.Log(message);
 		}
 
-		static StreamWriter _errorFile;
-		static StreamWriter ErrorFile {
-			get {
-				if (_errorFile == null) {
-					_errorFile = File.CreateText(String.Format(ErrorFileName, Now()));
-				}
-				return _errorFile;
-			}
-		}
-
-		static Stopwatch _clock;
-		static Stopwatch Clock {
-			get {
-				if (_clock == null) {
-					_clock = new Stopwatch();
-					_clock.Start();
-				}
-				return _clock;
-			}
-		}
-
-		static Random _rng;
-		static Random RNG {
-			get {
-				if (_rng == null) {
-					_rng = new Random();
-				}
-				return _rng;
-			}
+		static void Error(string message) {
+			app.Error(message);
 		}
 
 		static void Main(string[] args) {
+			Log("START");
 			DownloadYTS();
 			//DownloadTypes();
 		}
 
 		static void DownloadYTS() {
-			FixFileNames();
-			Directories();
-
-			Log("START");
-
 			WebClient web = new WebClient();
 
 			string startName = String.Format(StartFileName, Now());
@@ -168,30 +116,33 @@ namespace download_yts_full {
 										Error("No page matches - " + pageName + " - " + pageUrl);
 									} else {
 										foreach (Match m in pageMatches) {
-											string torrentUrl = m.Groups[1].Value;
-											string torrentRType = m.Groups[2].Value;
-											string torrentName = String.Format(TorrentFileName, i, current, title, torrentRType);
+											for (int uu = 0; uu < m.Groups[1].Captures.Count; uu++) {
+												string torrentUrl = m.Groups[1].Captures[uu].Value;
 
-											Log("torrent file - " + torrentName + " - " + torrentUrl);
+												string torrentRType = m.Groups[2].Captures[uu].Value;
+												string torrentName = String.Format(TorrentFileName, i, current, title, torrentRType);
 
-											try {
-												web.DownloadFile(torrentUrl, torrentName);
-											} catch (Exception ex) {
-												Error("bad fetch torrent - " + torrentName + " - " + torrentUrl + " - " + ex.ToString());
+												Log("torrent file - " + torrentName + " - " + torrentUrl);
+
+												try {
+													web.DownloadFile(torrentUrl, torrentName);
+												} catch (Exception ex) {
+													Error("bad fetch torrent - " + torrentName + " - " + torrentUrl + " - " + ex.ToString());
+												}
+
+												try {
+													string hash = FileToMD5(torrentName);
+													string otherName = String.Format(TorrentFileNameSecond, title, torrentRType, hash);
+
+													File.Move(torrentName, otherName);
+												} catch (Exception ex) {
+													Error("error changing md5 name - " + torrentName + " - " + torrentUrl + " - " + ex.ToString());
+												}
+
+
+
+												Wait();
 											}
-
-											try {
-												string hash = FileToMD5(torrentName);
-												string otherName = String.Format(TorrentFileNameSecond, title, torrentRType, hash);
-
-												File.Move(torrentName, otherName);
-											} catch (Exception ex) {
-												Error("error changing md5 name - " + torrentName + " - " + torrentUrl + " - " + ex.ToString());
-											}
-
-
-
-											Wait();
 										}
 									}
 								}
@@ -206,18 +157,6 @@ namespace download_yts_full {
 			End();
 		}
 
-		static string FileToMD5(string filename) {
-			FileStream fs = File.Open(filename, FileMode.Open);
-			byte[] crc = md5.ComputeHash(fs);
-			StringBuilder sb = new StringBuilder();
-			for (int k = 0; k < crc.Length; k++) {
-				sb.Append(crc[k].ToString("x2"));
-			}
-			string hash = sb.ToString();
-			fs.Close();
-
-			return hash;
-		}
 
 		static void DownloadTypes() {
 
@@ -255,78 +194,6 @@ namespace download_yts_full {
 			End();
 		}
 
-
-		static void FixFileNames() {
-			LogFileName = LogFileName.Replace("{now}", NowString);
-			ErrorFileName = ErrorFileName.Replace("{now}", NowString);
-			StartFileName = StartFileName.Replace("{now}", NowString);
-			ListFileName = ListFileName.Replace("{now}", NowString);
-			PageFileName = PageFileName.Replace("{now}", NowString);
-			TorrentFileName = TorrentFileName.Replace("{now}", NowString);
-			TorrentFileNameSecond = TorrentFileNameSecond.Replace("{now}", NowString);
-		}
-
-		static void Directories() {
-			mkdir(LogFileName);
-			mkdir(ErrorFileName);
-			mkdir(StartFileName);
-			mkdir(ListFileName);
-			mkdir(PageFileName);
-			mkdir(TorrentFileName);
-		}
-
-		static void mkdir(string path) {
-			string dirName = Path.GetDirectoryName(path);
-			if (!Directory.Exists(dirName)) {
-				Directory.CreateDirectory(dirName);
-			}
-		}
-
-		static string ClockStamp() {
-			TimeSpan delta = Clock.Elapsed;
-			string stamp = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", delta.Hours, delta.Minutes, delta.Seconds, delta.Milliseconds / 10);
-			return stamp;
-		}
-
-		static string Now() {
-			return DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffff");
-		}
-
-		static string LogStamp() {
-			return Now() + " " + ClockStamp() + " --- ";
-		}
-
-		static void Log(string message) {
-			message = LogStamp() + message;
-			Console.WriteLine(message);
-			LogFile.WriteLine(message);
-			LogFile.Flush();
-		}
-
-		static void Error(string message) {
-			Log(message);
-			message = LogStamp() + message;
-			ErrorFile.WriteLine(message);
-			ErrorFile.Flush();
-		}
-
-		static void Wait() {
-			//int time = 500 + RNG.Next(1000);
-			//Thread.Sleep(time);
-		}
-
-		static void End() {
-			Clock.Stop();
-			Log("END");
-
-			ErrorFile.Flush();
-			ErrorFile.Close();
-
-			LogFile.Flush();
-			LogFile.Close();
-
-			Console.ReadKey();
-		}
 	}
 }
 
