@@ -28,23 +28,22 @@ namespace download_yts_full {
 		public Download dl = new Download();
 
 		static void Log(string message) {
-			app.Log(message);
+			App.Log(message);
 		}
 
 		static void Error(string message) {
-			app.Error(message);
+			App.Error(message);
 		}
-		public YTS(App app) {
-			this.app = app;
+		public YTS() {
 			Initialize();
 		}
 
 		private void Initialize() {
-			this.StartFileName = this.app.GetInWorking(this.StartFileName);
-			this.ListFileName = this.app.GetInWorking(this.ListFileName);
-			this.PageFileName = this.app.GetInWorking(this.PageFileName);
-			this.TorrentFileName = this.app.GetInWorking(this.TorrentFileName);
-			this.TorrentFileNameSecond = this.app.GetInWorking(this.TorrentFileNameSecond);
+			this.StartFileName = App.GetInWorking(this.StartFileName);
+			this.ListFileName = App.GetInWorking(this.ListFileName);
+			this.PageFileName = App.GetInWorking(this.PageFileName);
+			this.TorrentFileName = App.GetInWorking(this.TorrentFileName);
+			this.TorrentFileNameSecond = App.GetInWorking(this.TorrentFileNameSecond);
 		}
 
 		public class ListPage {

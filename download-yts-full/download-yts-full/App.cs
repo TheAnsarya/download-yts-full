@@ -10,34 +10,33 @@ using System.Threading.Tasks;
 
 namespace download_yts_full {
 	class App {
-		public string BaseFolder = null;
-		public string LogFileName = @"run\{now}\log.txt";
-		public string ErrorFileName = @"run\{now}\error.txt";
-		public string WorkingFolder = @"run\{now}\";
-
-		static MD5 md5 = MD5.Create();
+		public static string BaseFolder = null;
+		public static string LogFileName = @"run\{now}\log.txt";
+		public static string ErrorFileName = @"run\{now}\error.txt";
+		public static string WorkingFolder = @"run\{now}\";
+		public static MD5 md5 = MD5.Create();
 		
-		public App(string baseFolder) {
-			this.BaseFolder = baseFolder;
+		public static void Initialize(string baseFolder) {
+			BaseFolder = baseFolder;
 
 			// Working folder - base for the single run files
-			this.WorkingFolder = Path.Combine(this.BaseFolder, this.WorkingFolder);
-			this.WorkingFolder = WorkingFolder.Replace("{now}", this.NowString);
+			WorkingFolder = Path.Combine(BaseFolder, WorkingFolder);
+			WorkingFolder = WorkingFolder.Replace("{now}", NowString);
 			mkdir(WorkingFolder);
 		}
 
-		public string GetInWorking(string path) {
-			string newpath = Path.Combine(this.WorkingFolder, path);
+		public static string GetInWorking(string path) {
+			string newpath = Path.Combine(WorkingFolder, path);
 			mkdir(path);
 			return newpath;
 		}
 
-		public StreamWriter _logFile;
-		public StreamWriter LogFile {
+		public static StreamWriter _logFile;
+		public static StreamWriter LogFile {
 			get {
 				if (_logFile == null) {
-					this.LogFileName = Path.Combine(this.BaseFolder, this.LogFileName);
-					this.LogFileName = LogFileName.Replace("{now}", this.NowString);
+					LogFileName = Path.Combine(BaseFolder, LogFileName);
+					LogFileName = LogFileName.Replace("{now}", NowString);
 					mkdir(LogFileName);
 					_logFile = File.CreateText(String.Format(LogFileName, Now()));
 				}
@@ -45,12 +44,12 @@ namespace download_yts_full {
 			}
 		}
 
-		public StreamWriter _errorFile;
-		public StreamWriter ErrorFile {
+		private static StreamWriter _errorFile;
+		public static StreamWriter ErrorFile {
 			get {
 				if (_errorFile == null) {
-					this.ErrorFileName = Path.Combine(this.BaseFolder, this.ErrorFileName);
-					this.ErrorFileName = ErrorFileName.Replace("{now}", this.NowString);
+					ErrorFileName = Path.Combine(BaseFolder, ErrorFileName);
+					ErrorFileName = ErrorFileName.Replace("{now}", NowString);
 					mkdir(ErrorFileName);
 					_errorFile = File.CreateText(String.Format(ErrorFileName, Now()));
 				}
@@ -58,8 +57,8 @@ namespace download_yts_full {
 			}
 		}
 
-		static Stopwatch _clock;
-		static Stopwatch Clock {
+		private static Stopwatch _clock;
+		public static Stopwatch Clock {
 			get {
 				if (_clock == null) {
 					_clock = new Stopwatch();
@@ -69,8 +68,8 @@ namespace download_yts_full {
 			}
 		}
 
-		static Random _rng;
-		static Random RNG {
+		private static Random _rng;
+		public static Random RNG {
 			get {
 				if (_rng == null) {
 					_rng = new Random();
@@ -99,30 +98,30 @@ namespace download_yts_full {
 			return hash;
 		}
 		
-		static string ClockStamp() {
+		public static string ClockStamp() {
 			TimeSpan delta = Clock.Elapsed;
 			string stamp = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", delta.Hours, delta.Minutes, delta.Seconds, delta.Milliseconds / 10);
 			return stamp;
 		}
 
-		public string NowString = Now();
+		public static string NowString = Now();
 
-		static string Now() {
+		public static string Now() {
 			return DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-ffff");
 		}
 
-		static string LogStamp() {
+		public static string LogStamp() {
 			return Now() + " " + ClockStamp() + " --- ";
 		}
 
-		public void Log(string message) {
+		public static void Log(string message) {
 			message = LogStamp() + message;
 			Console.WriteLine(message);
 			LogFile.WriteLine(message);
 			LogFile.Flush();
 		}
 
-		public void Error(string message) {
+		public static void Error(string message) {
 			Log(message);
 			message = LogStamp() + message;
 			ErrorFile.WriteLine(message);
@@ -139,7 +138,7 @@ namespace download_yts_full {
 			Thread.Sleep(time);
 		}
 
-		public void End() {
+		public static void End() {
 			Clock.Stop();
 			Log("END");
 

@@ -13,27 +13,20 @@ using System.Security.Cryptography;
 
 namespace download_yts_full {
 	class Program {
-		static string baseFolder = @"c:\working\yts_base\";
-
-		static readonly App app = new App(baseFolder);
-
-		static readonly YTS yts = new YTS(app);
+		static string BaseFolder = @"c:\working\yts_base\";
+		
+		static YTS yts = null;
 
 		//static string DiagnosticNow = @"2019-01-01_11-41-23-1358";
 
 
 		static int StartOnPage = 1;
-
-		static void Log(string message) {
-			app.Log(message);
-		}
-
-		static void Error(string message) {
-			app.Error(message);
-		}
-
+		
 		static void Main(string[] args) {
+			App.Initalize(Basefolder);
 			Log("START");
+			YTS = new YTS();
+
 			DownloadYTS();
 			//DownloadTypes();
 		}
