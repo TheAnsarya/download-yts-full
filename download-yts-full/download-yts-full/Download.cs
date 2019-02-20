@@ -70,7 +70,7 @@ namespace download_yts_full {
 		// Gets the next avilable connection
 		// Should be thread safe
 		// Note that with the lock, if something goes wrong nothing can download for upwards of ten minutes
-		public WC GetNext() {
+		public WC GetNext() {x
 			lock (_lock) {
 				for (int i = 0; i < DEFAULT_MAX_ATTEMPTS; i++) {
 					for (int j = this.Last + 1; j < this.Count; j++) {
@@ -111,22 +111,12 @@ namespace download_yts_full {
 			}
 		}
 		
-		public class WC {
-			public bool InUse = false;
-			public WebClient web = new WebClient();
-
-			public bool Use() {
-				if (this.InUse) {
-					return false;
+		// Wrapper for WebClient
+		public class WC : LockedResourceObject<WebClient> {
+			public WebClient web {
+				get {
+					return this.Get();
 				}
-
-				this.InUse = true;
-
-				return true;
-			}
-
-			public void Done() {
-				this.InUse = false;
 			}
 		}
 	}

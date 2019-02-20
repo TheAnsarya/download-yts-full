@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace download_yts_full {
 	class YTS {
-		static string StartURL = @"https://yts.am/browse-movies?page=1";
+		static string  StartURL = @"https://yts.am/browse-movies?page=1";
 		static string ListURL = @"https://yts.am/browse-movies?page={0}";
 
 		// Filenames
